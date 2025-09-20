@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="ecommerce_app">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>ecommerce_app</title>
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Google Sign-In Web Configuration -->
+  <!-- IMPORTANT: Update the content attribute with your actual Web client ID -->
+  <!-- Found in Firebase Console → Authentication → Sign-in method → Google → Web SDK configuration -->
+  <meta name="google-signin-client_id" content="478965214123-abcdef123456789.apps.googleusercontent.com">
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <!-- Firebase Configuration -->
+  <script>
+    // Clean Firebase configuration for E-commerce App
+    // IMPORTANT: Update these values with your actual Firebase configuration
+    // Found in Firebase Console → Project Settings → General → Your apps
+    const firebaseConfig = {
+      apiKey: "AIzaSyDc5mJ8FqJ5_0gRQEPG7vZMbXl2dKjdXQk",
+      authDomain: "flutter-ecommerce-clean-2024.firebaseapp.com",
+      projectId: "flutter-ecommerce-clean-2024",
+      storageBucket: "flutter-ecommerce-clean-2024.appspot.com",
+      messagingSenderId: "478965214123",
+      appId: "1:478965214123:web:abc123def456gh789",
+      measurementId: "G-9Y8X7W6V5U"
+    };
+    
+    // Initialize Firebase
+    if (typeof firebase !== 'undefined') {
+      firebase.initializeApp(firebaseConfig);
+      console.log('Firebase initialized successfully');
+    } else {
+      console.error('Firebase SDK not loaded');
+    }
+  </script>
+  
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
