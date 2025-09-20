@@ -15,6 +15,22 @@ A complete, high-performance E-commerce application built with Flutter that work
 - **Push Notifications**: Real-time messaging capabilities
 - **Dark/Light Theme**: User preference-based theme switching
 
+## 📥 Downloading This Repository
+
+Anyone can easily download all files in this repository:
+
+### Option 1: Download as ZIP (Easiest)
+1. Click the green "Code" button at the top of this page
+2. Select "Download ZIP"
+3. Extract the ZIP file to any folder on your computer
+
+### Option 2: Clone with Git
+```bash
+git clone https://github.com/youssef67e7/E-commerceFlutter.git
+```
+
+See [DOWNLOAD_INSTRUCTIONS.md](DOWNLOAD_INSTRUCTIONS.md) for more detailed download options.
+
 ## 🛠️ Tech Stack
 
 - **Flutter**: Cross-platform UI toolkit
