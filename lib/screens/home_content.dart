@@ -17,8 +17,14 @@ class HomeContent extends StatelessWidget {
     
     // Load products if they haven't been loaded yet
     if (productsProvider.products.isEmpty && !productsProvider.isLoading) {
+      // Use a more robust approach to initialize data
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        productsProvider.initializeData();
+        // Add a small delay to ensure the widget is fully built
+        Future.delayed(Duration.zero, () {
+          if (productsProvider.products.isEmpty && !productsProvider.isLoading) {
+            productsProvider.initializeData();
+          }
+        });
       });
     }
     
@@ -214,8 +220,9 @@ class HomeContent extends StatelessWidget {
                       errorMessage: getErrorMessage(productsProvider.error),
                       onRetry: () {
                         productsProvider.clearError();
-                        productsProvider.loadProducts();
+                        productsProvider.retryLoading();
                       },
+                      retryButtonText: 'Retry',
                     );
                   }
 
@@ -232,10 +239,10 @@ class HomeContent extends StatelessWidget {
                       message: 'Check back later for new products!',
                       action: ElevatedButton.icon(
                         onPressed: () {
-                          productsProvider.loadProducts();
+                          productsProvider.retryLoading();
                         },
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Refresh'),
+                        label: const Text('Retry'),
                       ),
                     );
                   }

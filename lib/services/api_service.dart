@@ -44,14 +44,19 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Check connectivity before making request
-          final connectivityResult = await Connectivity().checkConnectivity();
-          if (connectivityResult.contains(ConnectivityResult.none)) {
-            throw DioException(
-              requestOptions: options,
-              type: DioExceptionType.connectionError,
-              error: 'No internet connection',
-            );
+          try {
+            // Check connectivity before making request
+            final connectivityResult = await Connectivity().checkConnectivity();
+            if (connectivityResult.contains(ConnectivityResult.none)) {
+              throw DioException(
+                requestOptions: options,
+                type: DioExceptionType.connectionError,
+                error: 'No internet connection',
+              );
+            }
+          } catch (e) {
+            // If connectivity check fails, continue with the request
+            debugPrint('Connectivity check failed: $e');
           }
           handler.next(options);
         },
@@ -116,17 +121,33 @@ class ApiService {
   }
 
   // Fetch all products
-  Future<List<Product>> fetchProducts({int limit = 20, int skip = 0}) async { // Reduced default limit
+  Future<List<Product>> fetchProducts({int limit = 20, int skip = 0}) async {
     try {
       // Limit the number of products fetched to improve performance
-      final actualLimit = limit > 30 ? 30 : limit; // Reduced max limit
+      final actualLimit = limit > 50 ? 50 : limit; // Increased max limit back to 50
       final response = await _dio.get(
         '/products',
         queryParameters: {'limit': actualLimit, 'skip': skip},
       );
 
-      final List<dynamic> productsJson = response.data['products'];
-      return productsJson.map((json) => Product.fromJson(json)).toList();
+      // Validate response structure
+      if (response.data is! Map<String, dynamic>) {
+        throw FormatException('Invalid response format');
+      }
+
+      final productsData = response.data['products'];
+      if (productsData is! List<dynamic>) {
+        throw FormatException('Invalid products data format');
+      }
+
+      // Filter out any null or invalid product entries
+      final validProducts = productsData
+          .where((item) => item != null && item is Map<String, dynamic>)
+          .map((json) => Product.fromJson(json as Map<String, dynamic>))
+          .where((product) => product.id.isNotEmpty) // Only include products with valid IDs
+          .toList();
+
+      return validProducts;
     } catch (e) {
       throw _convertError(e);
     }
@@ -140,14 +161,30 @@ class ApiService {
   }) async {
     try {
       // Limit the number of products fetched to improve performance
-      final actualLimit = limit > 30 ? 30 : limit; // Reduced max limit
+      final actualLimit = limit > 50 ? 50 : limit; // Increased max limit back to 50
       final response = await _dio.get(
         '/products/category/$category',
         queryParameters: {'limit': actualLimit, 'skip': skip},
       );
 
-      final List<dynamic> productsJson = response.data['products'];
-      return productsJson.map((json) => Product.fromJson(json)).toList();
+      // Validate response structure
+      if (response.data is! Map<String, dynamic>) {
+        throw FormatException('Invalid response format');
+      }
+
+      final productsData = response.data['products'];
+      if (productsData is! List<dynamic>) {
+        throw FormatException('Invalid products data format');
+      }
+
+      // Filter out any null or invalid product entries
+      final validProducts = productsData
+          .where((item) => item != null && item is Map<String, dynamic>)
+          .map((json) => Product.fromJson(json as Map<String, dynamic>))
+          .where((product) => product.id.isNotEmpty) // Only include products with valid IDs
+          .toList();
+
+      return validProducts;
     } catch (e) {
       throw _convertError(e);
     }
@@ -161,14 +198,30 @@ class ApiService {
   }) async {
     try {
       // Limit the number of products fetched to improve performance
-      final actualLimit = limit > 30 ? 30 : limit; // Reduced max limit
+      final actualLimit = limit > 50 ? 50 : limit; // Increased max limit back to 50
       final response = await _dio.get(
         '/products/search',
         queryParameters: {'q': query, 'limit': actualLimit, 'skip': skip},
       );
 
-      final List<dynamic> productsJson = response.data['products'];
-      return productsJson.map((json) => Product.fromJson(json)).toList();
+      // Validate response structure
+      if (response.data is! Map<String, dynamic>) {
+        throw FormatException('Invalid response format');
+      }
+
+      final productsData = response.data['products'];
+      if (productsData is! List<dynamic>) {
+        throw FormatException('Invalid products data format');
+      }
+
+      // Filter out any null or invalid product entries
+      final validProducts = productsData
+          .where((item) => item != null && item is Map<String, dynamic>)
+          .map((json) => Product.fromJson(json as Map<String, dynamic>))
+          .where((product) => product.id.isNotEmpty) // Only include products with valid IDs
+          .toList();
+
+      return validProducts;
     } catch (e) {
       throw _convertError(e);
     }
@@ -184,7 +237,18 @@ class ApiService {
 
     try {
       final response = await _dio.get('/products/categories');
-      final categories = List<String>.from(response.data);
+      
+      // Validate response structure
+      if (response.data is! List<dynamic>) {
+        throw FormatException('Invalid categories data format');
+      }
+
+      // Filter out any null or non-string entries
+      final categories = response.data
+          .where((item) => item != null && item is String)
+          .map((item) => item as String)
+          .toList();
+
       // Save to cache
       await _saveCategoriesToCache(categories);
       return categories;
@@ -232,6 +296,12 @@ class ApiService {
   Future<Product> fetchProduct(String id) async {
     try {
       final response = await _dio.get('/products/$id');
+      
+      // Validate response structure
+      if (response.data is! Map<String, dynamic>) {
+        throw FormatException('Invalid product data format');
+      }
+
       return Product.fromJson(response.data);
     } catch (e) {
       throw _convertError(e);
@@ -303,9 +373,27 @@ class ApiService {
   // Convert various error types to a consistent format
   Exception _convertError(dynamic error) {
     if (error is DioException) {
-      return Exception(error.error ?? 'Network error occurred');
+      // Provide more specific error messages
+      if (error.type == DioExceptionType.connectionTimeout || 
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout) {
+        return Exception('Network timeout. Please check your connection and try again.');
+      } else if (error.type == DioExceptionType.connectionError) {
+        return Exception('Network connection error. Please check your internet connection.');
+      } else if (error.type == DioExceptionType.badResponse) {
+        if (error.response?.statusCode == 404) {
+          return Exception('Product not found.');
+        } else if (error.response?.statusCode == 500) {
+          return Exception('Server error. Please try again later.');
+        } else {
+          return Exception('Server error (${error.response?.statusCode}). Please try again.');
+        }
+      }
+      return Exception(error.error?.toString() ?? 'Network error occurred');
+    } else if (error is FormatException) {
+      return Exception('Data format error. Please try again.');
     } else {
-      return Exception('An unexpected error occurred: $error');
+      return Exception('An unexpected error occurred: ${error.toString()}');
     }
   }
 
@@ -314,6 +402,17 @@ class ApiService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       return !connectivityResult.contains(ConnectivityResult.none);
+    } catch (e) {
+      // If we can't check connectivity, assume we have connection
+      return true;
+    }
+  }
+
+  // Test API connectivity
+  Future<bool> testApiConnectivity() async {
+    try {
+      final response = await _dio.get('/products', queryParameters: {'limit': 1});
+      return response.statusCode == 200;
     } catch (e) {
       return false;
     }

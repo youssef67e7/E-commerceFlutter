@@ -20,15 +20,29 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    // Handle potential null values and type conversions more safely
+    final id = json['id']?.toString() ?? '';
+    final title = json['title']?.toString() ?? 'Unknown Product';
+    final description = json['description']?.toString() ?? 'No description available';
+    final price = (json['price'] is num) ? json['price'].toDouble() : 0.0;
+    final images = json['images'] as List<dynamic>?;
+    final thumbnail = json['thumbnail']?.toString();
+    final imageUrl = thumbnail ?? (images?.isNotEmpty == true ? images![0]?.toString() : '') ?? '';
+    final category = json['category']?.toString() ?? 'Uncategorized';
+    final rating = (json['rating'] is num) ? json['rating'].toDouble() : 0.0;
+    // Fix review count - it should come from a 'reviewCount' field, not 'reviews' array
+    final reviewCount = (json['reviewCount'] is int) ? json['reviewCount'] : 
+                     (json['reviews'] is List<dynamic> ? json['reviews'].length : 0);
+
     return Product(
-      id: json['id'].toString(),
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
-      imageUrl: json['thumbnail'] ?? json['images']?[0] ?? '',
-      category: json['category'] ?? '',
-      rating: (json['rating'] ?? 0).toDouble(),
-      reviewCount: json['reviewCount'] ?? 0,
+      id: id,
+      title: title,
+      description: description,
+      price: price,
+      imageUrl: imageUrl,
+      category: category,
+      rating: rating,
+      reviewCount: reviewCount,
     );
   }
 

@@ -36,11 +36,18 @@ class ProductsProvider with ChangeNotifier {
   Future<void> initializeData() async {
     if (_products.isNotEmpty || _isLoading) return; // Already initialized or loading
     
-    // Load categories first (faster)
-    await fetchAndSetCategories();
-    
-    // Then load initial products
-    await fetchAndSetProducts();
+    try {
+      // Load categories first (faster)
+      await fetchAndSetCategories();
+      
+      // Then load initial products
+      await fetchAndSetProducts();
+    } catch (error) {
+      // Handle initialization errors gracefully
+      debugPrint('Error initializing data: $error');
+      _error = error.toString();
+      notifyListeners();
+    }
   }
 
   // Set selected category
@@ -86,9 +93,8 @@ class ProductsProvider with ChangeNotifier {
       final makeupCategories = ['beauty', 'fragrances', 'skin-care'];
       loadedProducts =
           loadedProducts.where((product) {
-            return !makeupCategories.any(
-              (category) => product.category.toLowerCase().contains(category),
-            );
+            // More permissive filtering - only filter exact matches
+            return !makeupCategories.contains(product.category.toLowerCase());
           }).toList();
 
       if (refresh) {
@@ -101,6 +107,8 @@ class ProductsProvider with ChangeNotifier {
       _currentPage++;
     } catch (error) {
       _error = error.toString();
+      // Print error to console for debugging
+      debugPrint('Error fetching products: $error');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -111,9 +119,7 @@ class ProductsProvider with ChangeNotifier {
   Future<void> fetchProductsByCategory(String category) async {
     // If trying to fetch makeup categories, return empty list
     final makeupCategories = ['beauty', 'fragrances', 'skin-care'];
-    if (makeupCategories.any(
-      (makeupCategory) => category.toLowerCase().contains(makeupCategory),
-    )) {
+    if (makeupCategories.contains(category.toLowerCase())) {
       _selectedCategory = category;
       _products = [];
       _isLoading = false;
@@ -138,10 +144,8 @@ class ProductsProvider with ChangeNotifier {
       final makeupCategories = ['beauty', 'fragrances', 'skin-care'];
       final filteredProducts =
           loadedProducts.where((product) {
-            return !makeupCategories.any(
-              (makeupCategory) =>
-                  product.category.toLowerCase().contains(makeupCategory),
-            );
+            // More permissive filtering - only filter exact matches
+            return !makeupCategories.contains(product.category.toLowerCase());
           }).toList();
 
       _products = filteredProducts;
@@ -149,6 +153,8 @@ class ProductsProvider with ChangeNotifier {
       _hasMoreProducts = filteredProducts.length == _pageSize;
     } catch (error) {
       _error = error.toString();
+      // Print error to console for debugging
+      debugPrint('Error fetching products by category: $error');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -174,10 +180,8 @@ class ProductsProvider with ChangeNotifier {
       final makeupCategories = ['beauty', 'fragrances', 'skin-care'];
       final filteredCategories =
           loadedCategories.where((category) {
-            return !makeupCategories.any(
-              (makeupCategory) =>
-                  category.toLowerCase().contains(makeupCategory),
-            );
+            // More permissive filtering - only filter exact matches
+            return !makeupCategories.contains(category.toLowerCase());
           }).toList();
 
       _categories = filteredCategories;
@@ -185,6 +189,8 @@ class ProductsProvider with ChangeNotifier {
       await _saveCategoriesToCache(filteredCategories);
     } catch (error) {
       _error = error.toString();
+      // Print error to console for debugging
+      debugPrint('Error fetching categories: $error');
       // Set default categories if API fails, excluding makeup
       _categories = [
         'Electronics',
@@ -244,10 +250,8 @@ class ProductsProvider with ChangeNotifier {
       final makeupCategories = ['beauty', 'fragrances', 'skin-care'];
       final filteredCategories =
           loadedCategories.where((category) {
-            return !makeupCategories.any(
-              (makeupCategory) =>
-                  category.toLowerCase().contains(makeupCategory),
-            );
+            // More permissive filtering - only filter exact matches
+            return !makeupCategories.contains(category.toLowerCase());
           }).toList();
 
       // Only update if different from current categories
@@ -258,6 +262,8 @@ class ProductsProvider with ChangeNotifier {
         await _saveCategoriesToCache(filteredCategories);
       }
     } catch (e) {
+      // Print error to console for debugging
+      debugPrint('Error refreshing categories: $e');
       // Ignore refresh errors
     }
   }
@@ -336,5 +342,21 @@ class ProductsProvider with ChangeNotifier {
   void clearCategoryFilter() {
     _selectedCategory = null;
     fetchAndSetProducts(refresh: true);
+  }
+
+  // Test API connectivity
+  Future<bool> testApiConnectivity() async {
+    try {
+      return await _apiService.testApiConnectivity();
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Retry loading products
+  Future<void> retryLoading() async {
+    _error = null;
+    notifyListeners();
+    await initializeData();
   }
 }
